@@ -1,16 +1,13 @@
-
-export interface TypeLinks { 
-    rel?: String 
-    url?: String
+export interface TypeCategories { 
+    name: string
 }
 
 export interface TypeNew {
-    categories?: [],
-    content?: String | undefined, 
-    description?: String,
-    enclosures?: [], 
-    id?: String,
-    links: Array<TypeLinks> | [],
-    published?: Date, 
-    title?: String 
+    categories?: Array<TypeCategories | undefined> | []
+    image?: string
+    id?: string
+    link?: string
+    published?: string
+    title?: string
+    isBookmark?: boolean | false
 }

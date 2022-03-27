@@ -1,7 +1,10 @@
-import { Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Dimensions, StyleSheet, Text, TouchableHighlight, TouchableOpacity, View } from 'react-native'
 import React from 'react'
+import Feather from 'react-native-vector-icons/Feather'
 import { COLORS, FONT_SIZE } from 'utils/styleGlobal'
-import * as rssParser from 'react-native-rss-parser'
+import { TypeNew } from 'screens/news/types'
+import { ProgressiveImage } from 'components/ProgressiveImage'
+import { timeAgo } from 'helper/NDate'
 
 const { width } = Dimensions.get('window')
 
@@ -13,35 +16,24 @@ export function widthHeightNewItem() {
 }
 
 interface NewItemProps {
-  data?: rssParser.FeedItem
+  data: TypeNew,
+  onClick?: () => void
+  onBookmarkNew?: () => void
 }
 
-const NewItem = ({ data }: NewItemProps) => {
-    
-  function getImage(): String {
-    const s = data?.description;
-    const matches: String = s?.matchAll(/<img src="(.*?)" >/g);
-    const images = Array.from(matches, x => x[1])
-
-    if (images.length > 0) {
-      return images[0]
-    }
-
-    return "https://i1-vnexpress.vnecdn.net/2022/03/24/x2-7194-1592382404-jpeg-164810-2718-2714-1648106736.jpg?w=1200&h=0&q=100&dpr=1&fit=crop&s=s2DXxkIZxpfATPmYQoQlag"
-  }
-
+const NewItem = ({ data, onClick, onBookmarkNew }: NewItemProps) => {
   return (
-    <View style={styles.container}>
-      <ImageBackground
-        style={styles.bgImage}
-        resizeMode='cover'
-        resizeMethod="resize"
-        source={{ uri: getImage() }}>
+    <TouchableHighlight style={styles.container} onPress={onClick}>
+      <>
+        <ProgressiveImage
+          style={styles.bgImage}
+          resizeMode='cover'
+          source={{ uri: data.image }}
+        />
         <View style={styles.vDetail}>
-
           <View style={styles.topContainer}>
-            <Text style={styles.topTitle}>{data?.categories.join(', ')}</Text>
-            <Text style={styles.topDateTime}>7 min read</Text>
+            <Text style={styles.topTitle}>{data.categories ? data.categories.join(', ') : ''}</Text>
+            <Text style={styles.topDateTime}>{timeAgo(data?.published ?? '')}</Text>
           </View>
 
           <View style={styles.midContainer}>
@@ -51,14 +43,21 @@ const NewItem = ({ data }: NewItemProps) => {
           </View>
 
           <View style={styles.bottomContainer}>
-            <TouchableOpacity style={styles.bottomButton}>
+            <View style={styles.bottomButton} >
               <Text style={styles.bottomButtonTitle}>Read</Text>
-            </TouchableOpacity>
+            </View>
           </View>
-
         </View>
-      </ImageBackground>
-    </View>
+
+        <TouchableOpacity 
+        style={styles.saveView} 
+        activeOpacity={0.75} 
+        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+        onPress={onBookmarkNew}>
+          <Feather size={24} color={data.isBookmark ? COLORS.BLUE : COLORS.WHITE} name={'bookmark'} />
+        </TouchableOpacity>
+      </>
+    </TouchableHighlight>
   )
 }
 
@@ -66,13 +65,17 @@ export default NewItem
 
 const styles = StyleSheet.create({
   container: {
-    width: widthHeightNewItem().width, 
-    height: '100%', 
-    marginLeft: 16, 
-    borderRadius: 10, 
+    width: widthHeightNewItem().width,
+    height: '100%',
+    marginLeft: 16,
+    borderRadius: 10,
     overflow: 'hidden'
   },
-  bgImage: { flex: 1, justifyContent: 'flex-end' },
+  bgImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end'
+  },
   vDetail: {
     backgroundColor: COLORS.WHITE,
     marginHorizontal: 8,
@@ -82,7 +85,11 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: 'column',
     width: widthHeightNewItem().width - 16,
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0
   },
   topContainer: {
     width: '100%',
@@ -95,7 +102,8 @@ const styles = StyleSheet.create({
   },
   topDateTime: {
     fontSize: FONT_SIZE.CONTENT,
-    color: COLORS.TEXT_COLOR_DESCRIPTION
+    color: COLORS.TEXT_COLOR_DESCRIPTION,
+    paddingLeft: 16
   },
   midContainer: {
     flex: 1,
@@ -119,5 +127,10 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.TINY,
     color: COLORS.WHITE,
     fontWeight: '600'
+  },
+  saveView: {
+    position: 'absolute',
+    top: 24,
+    right: 24
   }
 })
