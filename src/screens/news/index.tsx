@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Linking, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import NewHeader from 'components/news/NewHeader'
@@ -9,15 +9,32 @@ import { COLORS } from 'utils/styleGlobal'
 
 const News = () => {
 
-  const { isFetchData, listNew, titleNew, handleClickNew, onSaveBookmarkNew } = useNews()
+  const [page, setPage] = useState<number>(0)
+
+  const { isFetchData, isLastData, listNew, titleNew, handleClickNew, onSaveBookmarkNew, getNewsByPage } = useNews()
+
+  useEffect(() => {
+    getNewsByPage(page)
+  }, [page])
+
+  const nextPage = () => {
+    if (isLastData || isFetchData) return
+    setPage(page + 1)
+  }
 
   const isLoading: boolean = useMemo(() => { return isFetchData && listNew.length == 0 }, [isFetchData])
 
   return (
     <SafeAreaView style={styles.container} edges={['right', 'top', 'left']} >
-      { <LoaderPosition isLoading={isLoading} /> }
-      { !isLoading && <NewHeader title={titleNew} /> }
-      <ListNew isLoading={isLoading} data={listNew} onClickNew={handleClickNew} onBookmarkNew={onSaveBookmarkNew} />
+      {<LoaderPosition isLoading={isLoading} />}
+      {!isLoading && <NewHeader title={titleNew} />}
+      <ListNew
+        isFetchData={isFetchData}
+        data={listNew}
+        onClickNew={handleClickNew}
+        onBookmarkNew={onSaveBookmarkNew}
+        nextPage={nextPage}
+      />
     </SafeAreaView>
   )
 }

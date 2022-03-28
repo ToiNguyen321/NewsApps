@@ -1,11 +1,12 @@
 import NStorage, { BOOKMARK_NEW } from 'helper/NStorage'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Linking } from 'react-native'
 import * as rssParser from 'react-native-rss-parser'
 import { TypeNew } from 'screens/news/types'
 import { convertUrlImageNew } from 'utils'
 
 const RSS = 'https://vnexpress.net/rss/tin-moi-nhat.rss'
+const PAGE_SIZE = 10
 
 function convertTypeNew(data: rssParser.Feed): Array<TypeNew> {
     try {
@@ -29,18 +30,18 @@ function convertTypeNew(data: rssParser.Feed): Array<TypeNew> {
 
 const useNews = () => {
 
+    let listNewTotal : Array<TypeNew> = []
     const [titleNew, setTitleNew] = useState<string>('')
-    const [listNew, setListNew] = useState<Array<TypeNew> | []>([])
-    const [isFetchData, setisFetchData] = useState<Boolean>(true)
+    const [listNew, setListNew] = useState<Array<TypeNew>>([])
+    const [isFetchData, setIsFetchData] = useState<boolean>(true)
+    const [isLastData, setIsLastData] = useState<boolean>(false)
 
     useEffect(() => {
-        getListNew()
+        getListTotalNew()
     }, [])
 
-    const getListNew = async () => {
-
-        if (!isFetchData) setisFetchData(true)
-
+    const getListTotalNew = async () => {
+        // if (!isFetchData) setIsFetchData(true)
         return fetch(RSS)
             .then((response) => response.text())
             .then((responseData) => rssParser.parse(responseData))
@@ -56,10 +57,24 @@ const useNews = () => {
             }
         })
 
-        setListNew(news)
-        setisFetchData(false)
+        listNewTotal = news
         setTitleNew(rss.title)
     }
+
+    const getNewsByPage = useCallback((page: number) => {
+        setIsFetchData(true)
+
+        setTimeout(() => {
+            let listNewCurrent = listNewTotal.slice(0, (page + 1) * PAGE_SIZE)
+            if (listNewCurrent.length === listNewTotal.length) {
+                setIsLastData(true)
+            }else {
+                setListNew(listNewCurrent)
+            }
+            setIsFetchData(false)
+        }, 500)
+
+    }, [listNewTotal.length])
 
     const handleClickNew = (url: string) => {
         Linking.canOpenURL(url).then(supported => {
@@ -75,7 +90,7 @@ const useNews = () => {
         let listBookmarkNew: Array<string> = await NStorage.getItem(BOOKMARK_NEW) ?? []
         let listNewChange = [...listNew]
         let indexNewFromBookmark = listBookmarkNew.indexOf(id)
-        
+
         if (indexNewFromBookmark === -1) {
             listBookmarkNew.push(id)
             listNewChange.map((value: TypeNew) => {
@@ -97,11 +112,14 @@ const useNews = () => {
     }
 
     return {
+        listNewTotal,
         isFetchData,
+        isLastData,
         listNew,
         titleNew,
         handleClickNew,
-        onSaveBookmarkNew
+        onSaveBookmarkNew,
+        getNewsByPage
     }
 }
 
